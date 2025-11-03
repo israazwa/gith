@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../../routes/app_routes.dart';
+import '../providers/auth_provider.dart';
 
-/// Simple splash screen untuk Pertemuan 4
-///
-/// CATATAN: Splash logic (auto-navigate, check auth) akan ditambahkan
-/// di Pertemuan 9 (Authentication & Session Management)
+/// Splash screen with auth check
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -17,13 +16,26 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _navigateToTaskList();
+    _initializeApp();
   }
 
-  Future<void> _navigateToTaskList() async {
+  Future<void> _initializeApp() async {
+    // Wait for splash duration
     await Future.delayed(const Duration(seconds: 2));
-    if (mounted) {
+
+    if (!mounted) return;
+
+    // Check auth status
+    final authProvider = context.read<AuthProvider>();
+    await authProvider.checkAuthStatus();
+
+    if (!mounted) return;
+
+    // Navigate based on auth status
+    if (authProvider.isAuthenticated) {
       Navigator.pushReplacementNamed(context, AppRoutes.taskList);
+    } else {
+      Navigator.pushReplacementNamed(context, AppRoutes.login);
     }
   }
 
@@ -34,7 +46,7 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // App Icon (placeholder - akan diganti dengan real icon nanti)
+            // App Icon
             Icon(
               Icons.school_rounded,
               size: 80,
@@ -58,7 +70,10 @@ class _SplashScreenState extends State<SplashScreen> {
             Text(
               AppStrings.appTagline,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withValues(),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.7),
                   ),
             ),
 

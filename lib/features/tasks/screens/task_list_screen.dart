@@ -1,44 +1,46 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/task_model.dart';
 import '../widgets/task_card.dart';
+import '../providers/task_provider.dart';
+import '../../auth/providers/auth_provider.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../../routes/app_routes.dart';
 
 /// Task list screen dengan ListView.builder
-class TaskListScreen extends StatefulWidget {
+class TaskListScreen extends StatelessWidget {
   const TaskListScreen({super.key});
-
-  @override
-  State<TaskListScreen> createState() => _TaskListScreenState();
-}
-
-class _TaskListScreenState extends State<TaskListScreen> {
-  // Dummy data untuk P5
-  late List<TaskModel> tasks;
-
-  @override
-  void initState() {
-    super.initState();
-    tasks = TaskModel.getDummyTasks();
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text(AppStrings.myTasks),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () => _logout(context),
+          ),
+        ],
       ),
-      body: tasks.isEmpty ? _buildEmptyState() : _buildTaskList(),
+      body: Consumer<TaskProvider>(
+        builder: (context, taskProvider, child) {
+          final tasks = taskProvider.tasks;
+          return tasks.isEmpty
+              ? _buildEmptyState(context)
+              : _buildTaskList(tasks);
+        },
+      ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _navigateToAddTask,
+        onPressed: () => _navigateToAddTask(context),
         tooltip: AppStrings.addTask,
         child: const Icon(Icons.add),
       ),
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BuildContext context) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -61,26 +63,26 @@ class _TaskListScreenState extends State<TaskListScreen> {
     );
   }
 
-  Widget _buildTaskList() {
+  Widget _buildTaskList(List<TaskModel> tasks) {
     return ListView.builder(
       padding: const EdgeInsets.symmetric(vertical: 8),
       itemCount: tasks.length,
       itemBuilder: (context, index) {
         final task = tasks[index];
-        return _buildDismissibleTaskCard(task, index);
+        return _buildDismissibleTaskCard(context, task);
       },
     );
   }
 
-  Widget _buildDismissibleTaskCard(TaskModel task, int index) {
+  Widget _buildDismissibleTaskCard(BuildContext context, TaskModel task) {
     return Dismissible(
       key: Key(task.id),
       direction: DismissDirection.endToStart,
       background: _buildDeleteBackground(),
-      confirmDismiss: (direction) => _showDeleteConfirmation(task),
-      onDismissed: (direction) => _deleteTask(index),
+      confirmDismiss: (direction) => _showDeleteConfirmation(context, task),
+      onDismissed: (direction) => _deleteTask(context, task.id),
       child: InkWell(
-        onTap: () => _navigateToDetail(task),
+        onTap: () => _navigateToDetail(context, task),
         borderRadius: BorderRadius.circular(12),
         child: TaskCard(task: task),
       ),
@@ -99,7 +101,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
     );
   }
 
-  Future<bool?> _showDeleteConfirmation(TaskModel task) {
+  Future<bool?> _showDeleteConfirmation(BuildContext context, TaskModel task) {
     return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -120,23 +122,32 @@ class _TaskListScreenState extends State<TaskListScreen> {
     );
   }
 
-  void _deleteTask(int index) {
-    setState(() {
-      tasks.removeAt(index);
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(AppStrings.taskDeleted),
-        duration: Duration(seconds: 2),
-      ),
-    );
+  void _deleteTask(BuildContext context, String taskId) async {
+    final taskProvider = context.read<TaskProvider>();
+    await taskProvider.deleteTask(taskId);
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(AppStrings.taskDeleted),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
-  void _navigateToDetail(TaskModel task) {
+  void _navigateToDetail(BuildContext context, TaskModel task) {
     Navigator.pushNamed(context, AppRoutes.taskDetail, arguments: task);
   }
 
-  void _navigateToAddTask() {
+  void _navigateToAddTask(BuildContext context) {
     Navigator.pushNamed(context, AppRoutes.addTask);
+  }
+
+  void _logout(BuildContext context) async {
+    final authProvider = context.read<AuthProvider>();
+    await authProvider.logout();
+    if (context.mounted) {
+      Navigator.pushReplacementNamed(context, AppRoutes.login);
+    }
   }
 }

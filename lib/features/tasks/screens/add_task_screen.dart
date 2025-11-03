@@ -43,6 +43,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
 
   // NEW: Track description validation error
   bool _showDescriptionError = false;
+  bool _showToolbar = false;
 
   @override
   void initState() {
@@ -89,41 +90,57 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
 
               const SizedBox(height: 16),
 
-              // REMOVED: TextFormField untuk description
-              // NEW: Rich Text Editor dengan flutter_quill
+              // Rich Text Editor with Collapsible Toolbar
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Label
-                  Text(
-                    AppStrings.taskDescription,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          color: AppColors.onSurface.withOpacity(0.7),
-                        ),
+                  // Label with Toggle Button
+                  Row(
+                    children: [
+                      Text(
+                        AppStrings.taskDescription,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              color: AppColors.onSurface.withOpacity(0.7),
+                            ),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        icon: Icon(_showToolbar
+                            ? Icons.expand_less
+                            : Icons.expand_more),
+                        onPressed: () =>
+                            setState(() => _showToolbar = !_showToolbar),
+                        tooltip: _showToolbar
+                            ? 'Hide formatting'
+                            : 'Show formatting',
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 8),
 
-                  // Quill Toolbar (formatting options)
-                  Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceVariant,
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(8),
+                  // Quill Toolbar (conditionally shown)
+                  if (_showToolbar)
+                    Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceVariant,
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(8),
+                        ),
+                      ),
+                      child: quill.QuillSimpleToolbar(
+                        controller: _descriptionController,
                       ),
                     ),
-                    child: quill.QuillSimpleToolbar(
-                      controller: _descriptionController,
-                    ),
-                  ),
 
                   // Quill Editor
                   Container(
                     height: 200, // Fixed height untuk editor
                     decoration: BoxDecoration(
                       border: Border.all(color: AppColors.outline),
-                      borderRadius: const BorderRadius.vertical(
-                        bottom: Radius.circular(8),
-                      ),
+                      borderRadius: _showToolbar
+                          ? const BorderRadius.vertical(
+                              bottom: Radius.circular(8))
+                          : BorderRadius.circular(8),
                     ),
                     child: quill.QuillEditor(
                       controller: _descriptionController,
@@ -180,7 +197,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
 
               // NEW: Category Dropdown
               DropdownButtonFormField<TaskCategory>(
-                value: _selectedCategory,
+                initialValue: _selectedCategory,
                 decoration: const InputDecoration(
                   labelText: AppStrings.taskCategory,
                   hintText: AppStrings.selectCategory,
