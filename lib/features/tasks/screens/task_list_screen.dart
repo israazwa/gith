@@ -8,9 +8,56 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../../routes/app_routes.dart';
 
-/// Task list screen dengan ListView.builder
-class TaskListScreen extends StatelessWidget {
+/// Task filter enum
+enum TaskFilter {
+  all,
+  pending,
+  overdue,
+  completed,
+}
+
+/// Task list screen dengan ListView.builder dan filter functionality
+class TaskListScreen extends StatefulWidget {
   const TaskListScreen({super.key});
+
+  @override
+  State<TaskListScreen> createState() => _TaskListScreenState();
+}
+
+class _TaskListScreenState extends State<TaskListScreen> {
+  TaskFilter _selectedFilter = TaskFilter.all;
+
+  List<TaskModel> _getFilteredTasks(List<TaskModel> tasks) {
+    switch (_selectedFilter) {
+      case TaskFilter.all:
+        return tasks;
+      case TaskFilter.pending:
+        return tasks
+            .where((task) => task.status == TaskStatus.pending)
+            .toList();
+      case TaskFilter.overdue:
+        return tasks
+            .where((task) => task.status == TaskStatus.overdue)
+            .toList();
+      case TaskFilter.completed:
+        return tasks
+            .where((task) => task.status == TaskStatus.completed)
+            .toList();
+    }
+  }
+
+  String _getEmptyStateMessage() {
+    switch (_selectedFilter) {
+      case TaskFilter.all:
+        return AppStrings.noTasksAll;
+      case TaskFilter.pending:
+        return AppStrings.noTasksPending;
+      case TaskFilter.overdue:
+        return AppStrings.noTasksOverdue;
+      case TaskFilter.completed:
+        return AppStrings.noTasksCompleted;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +99,7 @@ class TaskListScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            AppStrings.noTasks,
+            _getEmptyStateMessage(),
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color:
                       Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
@@ -64,13 +111,23 @@ class TaskListScreen extends StatelessWidget {
   }
 
   Widget _buildTaskList(List<TaskModel> tasks) {
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      itemCount: tasks.length,
-      itemBuilder: (context, index) {
-        final task = tasks[index];
-        return _buildDismissibleTaskCard(context, task);
-      },
+    final filteredTasks = _getFilteredTasks(tasks);
+    return Column(
+      children: [
+        _buildFilterChips(),
+        Expanded(
+          child: filteredTasks.isEmpty
+              ? _buildEmptyState(context)
+              : ListView.builder(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  itemCount: filteredTasks.length,
+                  itemBuilder: (context, index) {
+                    final task = filteredTasks[index];
+                    return _buildDismissibleTaskCard(context, task);
+                  },
+                ),
+        ),
+      ],
     );
   }
 
@@ -141,6 +198,81 @@ class TaskListScreen extends StatelessWidget {
 
   void _navigateToAddTask(BuildContext context) {
     Navigator.pushNamed(context, AppRoutes.addTask);
+  }
+
+  Widget _buildFilterChips() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: TaskFilter.values.map((filter) {
+            final isSelected = _selectedFilter == filter;
+            final label = _getFilterLabel(filter);
+            final color = _getFilterColor(filter);
+
+            return Container(
+              margin: const EdgeInsets.only(right: 8),
+              child: FilterChip(
+                label: Text(label),
+                selected: isSelected,
+                onSelected: (selected) {
+                  setState(() {
+                    _selectedFilter = filter;
+                  });
+                },
+                backgroundColor: color.withOpacity(0.1),
+                selectedColor: color.withOpacity(0.2),
+                checkmarkColor: color,
+                labelStyle: TextStyle(
+                  color: isSelected
+                      ? color
+                      : Theme.of(context).colorScheme.onSurface,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  side: BorderSide(
+                    color: isSelected
+                        ? color
+                        : Theme.of(context)
+                            .colorScheme
+                            .outline
+                            .withOpacity(0.3),
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
+  String _getFilterLabel(TaskFilter filter) {
+    switch (filter) {
+      case TaskFilter.all:
+        return AppStrings.filterAll;
+      case TaskFilter.pending:
+        return AppStrings.filterPending;
+      case TaskFilter.overdue:
+        return AppStrings.filterOverdue;
+      case TaskFilter.completed:
+        return AppStrings.filterCompleted;
+    }
+  }
+
+  Color _getFilterColor(TaskFilter filter) {
+    switch (filter) {
+      case TaskFilter.all:
+        return Theme.of(context).colorScheme.primary;
+      case TaskFilter.pending:
+        return AppColors.statusPending;
+      case TaskFilter.overdue:
+        return AppColors.statusOverdue;
+      case TaskFilter.completed:
+        return AppColors.statusCompleted;
+    }
   }
 
   void _logout(BuildContext context) async {

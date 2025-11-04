@@ -44,6 +44,18 @@ class AppStrings {
   static const String statusPending = 'Pending';
   static const String statusOverdue = 'Overdue';
 
+  // ==================== Filter Labels ====================
+  static const String filterAll = 'All';
+  static const String filterPending = 'Pending';
+  static const String filterOverdue = 'Overdue';
+  static const String filterCompleted = 'Completed';
+
+  // ==================== Filter Empty States ====================
+  static const String noTasksAll = 'No tasks yet';
+  static const String noTasksPending = 'No pending tasks';
+  static const String noTasksOverdue = 'No overdue tasks';
+  static const String noTasksCompleted = 'No completed tasks';
+
   // ==================== Task Actions ====================
   static const String deleteTask = 'Delete Task';
   static const String deleteTaskConfirm =
@@ -81,15 +93,4 @@ class AppStrings {
   static const String categoryAssignment = 'Assignment';
   static const String categoryProject = 'Project';
   static const String categoryPersonal = 'Personal';
-
-  // ==================== TODO: Additional Strings ====================
-  // Will be added progressively in future tutorials:
-
-  // TODO P9: Add authentication strings
-  // static const String login = 'Login';
-  // static const String register = 'Register';
-  // etc...
-
-  // TODO P13: Add dashboard & analytics strings
-  // TODO P14: Add profile & settings strings
 }

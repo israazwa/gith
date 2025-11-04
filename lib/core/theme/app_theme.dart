@@ -35,6 +35,7 @@ class AppTheme {
       appBarTheme: AppBarTheme(
         centerTitle: true,
         elevation: 0,
+        backgroundColor: AppColors.primary,
         titleTextStyle: GoogleFonts.inter(
           fontSize: 20,
           fontWeight: FontWeight.w600,
